@@ -1,20 +1,14 @@
 """
 agent.py
 
-LangGraph Agent
+LangGraph Agent with short-term conversation memory.
 """
 
 from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.memory import InMemorySaver
 from langchain.tools import tool
 
 from src.llm import GeminiLLM
-from src.mcp_tool_client import (
-    expense_lookup,
-    eligibility_lookup,
-    approval_lookup,
-    airport_lookup,
-    cancellation_lookup,
-)
 
 from src.mcp_tool_client import (
     expense_lookup,
@@ -23,11 +17,16 @@ from src.mcp_tool_client import (
     airport_lookup,
     cancellation_lookup,
 )
+
+
+# ---------------------------------------------------------
+# MCP Tools exposed to the LangGraph agent
+# ---------------------------------------------------------
 
 @tool
 def expense_tool(country: str, amount: float) -> str:
     """
-    Get expense policy.
+    Get expense reimbursement policy for a country and amount.
     """
     return expense_lookup(country, amount)
 
@@ -35,7 +34,7 @@ def expense_tool(country: str, amount: float) -> str:
 @tool
 def eligibility_tool(employee_id: str) -> str:
     """
-    Check employee eligibility.
+    Check employee travel eligibility.
     """
     return eligibility_lookup(employee_id)
 
@@ -47,7 +46,7 @@ def approval_tool(
     amount: float,
 ) -> str:
     """
-    Check travel approval.
+    Check whether travel approval is required.
     """
     return approval_lookup(
         employee_id,
@@ -59,7 +58,7 @@ def approval_tool(
 @tool
 def airport_tool(country: str) -> str:
     """
-    Airport travel policy.
+    Get airport travel policy for a country.
     """
     return airport_lookup(country)
 
@@ -67,10 +66,14 @@ def airport_tool(country: str) -> str:
 @tool
 def cancellation_tool(stage: str) -> str:
     """
-    Cancellation policy.
+    Get cancellation policy for a specific travel stage.
     """
     return cancellation_lookup(stage)
 
+
+# ---------------------------------------------------------
+# List of tools available to the agent
+# ---------------------------------------------------------
 
 tools = [
     expense_tool,
@@ -80,9 +83,27 @@ tools = [
     cancellation_tool,
 ]
 
+
+# ---------------------------------------------------------
+# LLM
+# ---------------------------------------------------------
+
 llm = GeminiLLM().llm
+
+
+# ---------------------------------------------------------
+# Short-term conversation memory
+# ---------------------------------------------------------
+
+memory = InMemorySaver()
+
+
+# ---------------------------------------------------------
+# LangGraph Agent
+# ---------------------------------------------------------
 
 agent = create_react_agent(
     model=llm,
     tools=tools,
+    checkpointer=memory,
 )
