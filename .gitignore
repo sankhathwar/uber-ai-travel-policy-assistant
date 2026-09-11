@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual Environment
+venv/
+
+# Environment Variables
+.env
+
+# Vector Store
+vector_store/
+
+# Processed Data
+data/processed/
+
+# Logs
+logs/.venv/
